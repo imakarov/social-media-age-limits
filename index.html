@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Social Media Age Limits Dataset</title>
+<meta name="description" content="Open dataset of minimum ages for social media apps and national laws, with a primary source and check date for every row. CC BY 4.0.">
+<style>
+:root{--bg:#fbfbf9;--fg:#1d1d1b;--muted:#5f5f5a;--line:#e3e2dc;--card:#fff;--accent:#2b5fab;--chip:#eef2f8}
+@media (prefers-color-scheme:dark){:root{--bg:#161615;--fg:#ecebe6;--muted:#a3a29b;--line:#33332f;--card:#1f1f1d;--accent:#8fb2ec;--chip:#26303f}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:28px 16px 64px}
+h1{font-size:1.6rem;margin:0 0 6px}
+h2{font-size:1.15rem;margin:32px 0 8px}
+p{margin:0 0 10px;max-width:72ch}
+.muted{color:var(--muted)}
+a{color:var(--accent)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0 6px}
+input[type=search]{flex:1 1 260px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--fg);font:inherit}
+.tabs button{padding:8px 14px;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;font:inherit;cursor:pointer}
+.tabs button[aria-pressed=true]{background:var(--chip);border-color:var(--accent)}
+.wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{position:sticky;top:0;background:var(--card);font-weight:600;font-size:.85rem;color:var(--muted)}
+td.age{font-weight:600;white-space:nowrap}
+td small{color:var(--muted)}
+.count{font-size:.85rem;color:var(--muted);margin:6px 0}
+footer{margin-top:36px;font-size:.9rem;color:var(--muted)}
+code{font-size:.9em}
+</style>
+</head>
+<body>
+<main>
+<h1>Social media age limits by app and country</h1>
+<p>An open dataset of the minimum ages that apps state in their own terms, and the laws that set or raise age rules for children online. Every row links to its primary source and has the date it was checked. A blank age means the source does not state one.</p>
+<p class="muted">Data: <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Download <a href="data/apps.csv">apps.csv</a>, <a href="data/apps.json">apps.json</a>, <a href="data/countries.csv">countries.csv</a>, <a href="data/countries.json">countries.json</a>. Source and changelog on <a href="https://github.com/imakarov/social-media-age-limits">GitHub</a>.</p>
+<p class="muted">For a plain-language guide to what these ages mean for families, see <a href="https://teachkidshabits.com/blog/social-media-age-limits.html">Teach Kids Habits' explainer on social media age limits</a>.</p>
+
+<div class="bar">
+  <div class="tabs" role="group" aria-label="Table">
+    <button type="button" data-t="apps" aria-pressed="true">Apps</button>
+    <button type="button" data-t="countries" aria-pressed="false">Laws by country</button>
+  </div>
+  <input type="search" id="q" placeholder="Filter, e.g. TikTok, Germany, 16" aria-label="Filter rows">
+</div>
+<div class="count" id="count"></div>
+<div class="wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+
+<footer>
+<p>This is a reference, not legal advice. Terms and laws change; check the linked source before relying on a value. Corrections are welcome as GitHub issues with a link to the primary source.</p>
+<p>Cite as: Teach Kids Habits, social-media-age-limits dataset, 2026. https://github.com/imakarov/social-media-age-limits</p>
+</footer>
+</main>
+<script>
+const COLS = {
+  apps: [["app","App"],["scope","Scope"],["min_age","Min. age"],["rule","Rule (from source)"],["under_min_option","Below the minimum"],["source","Source"]],
+  countries: [["jurisdiction","Jurisdiction"],["law","Law"],["rule_type","Type"],["age","Age"],["status","Status"],["note","Notes"],["source","Source"]]
+};
+const data = {};
+let current = "apps";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function cell(r, k) {
+  if (k === "source") {
+    let host = ""; try { host = new URL(r.source_url).hostname.replace(/^www\./, ""); } catch (e) {}
+    return `<a href="${esc(r.source_url)}" rel="noopener">${esc(r.source_title || host)}</a><br><small>checked ${esc(r.checked_on)}</small>`;
+  }
+  if (k === "min_age" || k === "age") return r[k] == null ? "<small>not stated</small>" : esc(r[k]);
+  if (k === "jurisdiction") return esc(r.jurisdiction) + (r.subdivision ? `<br><small>${esc(r.subdivision)}</small>` : "");
+  if (k === "status") return esc(String(r.status).replace(/_/g, " ")) + (r.effective_date ? `<br><small>${esc(r.effective_date)}</small>` : "") + (r.verified === "partial" ? `<br><small>partly verified</small>` : "");
+  if (k === "rule_type") return esc(String(r.rule_type).replace(/_/g, " "));
+  if (k === "rule" && r.note) return esc(r.rule) + `<br><small>${esc(r.note)}</small>`;
+  if (k === "law" && r.applies_to) return esc(r.law) + `<br><small>${esc(r.applies_to)}</small>`;
+  return esc(r[k]);
+}
+function render() {
+  const cols = COLS[current], rows = data[current] || [];
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const shown = q ? rows.filter(r => Object.values(r).join(" ").toLowerCase().includes(q)) : rows;
+  document.querySelector("#tbl thead").innerHTML = "<tr>" + cols.map(c => `<th scope="col">${c[1]}</th>`).join("") + "</tr>";
+  document.querySelector("#tbl tbody").innerHTML = shown.map(r =>
+    "<tr>" + cols.map(c => `<td class="${c[0] === "min_age" || c[0] === "age" ? "age" : ""}">${cell(r, c[0])}</td>`).join("") + "</tr>").join("");
+  document.getElementById("count").textContent = `${shown.length} of ${rows.length} rows`;
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  current = b.dataset.t;
+  document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  render();
+}));
+document.getElementById("q").addEventListener("input", render);
+Promise.all(["apps", "countries"].map(n => fetch(`data/${n}.json`).then(r => r.json()).then(j => data[n] = j)))
+  .then(render)
+  .catch(() => { document.getElementById("count").textContent = "Could not load the data files. Download the CSV files above instead."; });
+</script>
+</body>
+</html>

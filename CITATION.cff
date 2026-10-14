@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this dataset, please cite it as below."
+title: "social-media-age-limits: social media age limits by app and country"
+type: dataset
+authors:
+  - name: "Teach Kids Habits"
+    website: "https://teachkidshabits.com"
+date-released: 2026-10-14
+version: "1.0.0"
+license: CC-BY-4.0
+repository-code: "https://github.com/imakarov/social-media-age-limits"
+url: "https://imakarov.github.io/social-media-age-limits/"
+abstract: >-
+  Minimum ages stated by major social media and messaging apps in their own terms,
+  and national laws on children's access to online services (COPPA, GDPR Article 8
+  digital consent ages, the UK Online Safety Act, Australia's under-16 social media
+  minimum age, and others). Every row links to a primary source and records the date
+  it was checked.
+keywords:
+  - social media
+  - age limits
+  - children
+  - COPPA
+  - GDPR
+  - online safety
+  - dataset
